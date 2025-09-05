@@ -11,21 +11,6 @@ spec:
     metadata:
       labels: { app: keycloak }
     spec:
-      # --- NEW: TOLERATIONS & AFFINITY --- 
-      tolerations:
-      - key: "dedicated"
-        operator: "Equal"
-        value: "keycloak"
-        effect: "NoSchedule"
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: role
-                operator: In
-                values:
-                - keycloak
       containers:
         - name: keycloak
           image: bitnami/keycloak:24.0.5
@@ -37,7 +22,7 @@ spec:
             - name: KEYCLOAK_ADMIN
               value: "admin"
             - name: KEYCLOAK_ADMIN_PASSWORD
-              value: "keycloakcuremd"
+              value: "someDifficultKeyCloakPassword"
 
             #Provide any extra arguments to keycloak
             - name: KEYCLOAK_EXTRA_ARGS
@@ -60,10 +45,10 @@ spec:
             - name: keycloak-conf
               mountPath: /opt/bitnami/keycloak/conf/keycloak.conf
               subPath: keycloak.conf
-            - name: providers         ## you can remove this volume if you dont want to use custom providers/JArs......
+            - name: providers         ## you can remove this volumeMount if you dont want to use custom providers/JArs......
               mountPath: /opt/bitnami/keycloak/providers
               readOnly: true
-            - name: themes             ## you can remove this volume if you dont want to use custom themes......
+            - name: themes             ## you can remove this volumeMount if you dont want to use custom themes......
               mountPath: /opt/bitnami/keycloak/themes
               readOnly: true
 
