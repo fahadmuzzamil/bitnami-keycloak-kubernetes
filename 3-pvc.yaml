@@ -1,0 +1,27 @@
+# providers PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: keycloak-providers
+  namespace: identity
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: efs-sc
+  resources:
+    requests:
+      storage: 5Gi
+---
+# themes PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: keycloak-themes
+  namespace: identity
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: efs-sc
+  resources:
+    requests:
+      storage: 5Gi

@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-conf
+  namespace: identity
+data:
+  keycloak.conf: |-
+    # --- your Keycloak config for TLS at ALB ---
+    db = postgres
+    db-username = db_username
+    db-password = db_passsword
+    db-url = jdbc:postgresql://your_database_url:5432/your_database?currentSchema=public
+
+    health-enabled = true
+    metrics-enabled = true
+
+    # TLS terminates at ALB
+    proxy = edge
+    http-enabled = true
+    http-relative-path = /
+    http-port = 8095
+    hostname-strict = false
+
+    Default distributed caches (no extra XML file)
+    cache = ispn
+
+    log-level = info
+    log-console-output = default

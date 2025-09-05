@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  namespace: identity
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: keycloak }
+  template:
+    metadata:
+      labels: { app: keycloak }
+    spec:
+      # --- NEW: TOLERATIONS & AFFINITY --- 
+      tolerations:
+      - key: "dedicated"
+        operator: "Equal"
+        value: "keycloak"
+        effect: "NoSchedule"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: role
+                operator: In
+                values:
+                - keycloak
+      containers:
+        - name: keycloak
+          image: bitnami/keycloak:24.0.5
+          imagePullPolicy: IfNotPresent
+          command: ["/opt/bitnami/keycloak/bin/kc.sh"]
+          args: ["start","--verbose"]
+          env:
+            # Setting up admin console credentials if you set before
+            - name: KEYCLOAK_ADMIN
+              value: "admin"
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              value: "keycloakcuremd"
+
+            #Provide any extra arguments to keycloak
+            - name: KEYCLOAK_EXTRA_ARGS
+              value: "-Dkeycloak.profile.feature.scripts=enabled"
+            - name: PROXY_ADDRESS_FORWARDING
+              value: "true"
+
+            # Clustering (DNS_PING)
+            - name: KC_CACHE
+              value: "ispn"
+            - name: KC_CACHE_STACK
+              value: "kubernetes"
+            - name: JAVA_OPTS_APPEND
+              value: "-Djgroups.dns.query=keycloak-headless.identity.svc.cluster.local"  #The real magic to make a cluster of pods via headless service discovery
+ 
+          ports:
+            - name: http
+              containerPort: 8095
+          volumeMounts:
+            - name: keycloak-conf
+              mountPath: /opt/bitnami/keycloak/conf/keycloak.conf
+              subPath: keycloak.conf
+            - name: providers         ## you can remove this volume if you dont want to use custom providers/JArs......
+              mountPath: /opt/bitnami/keycloak/providers
+              readOnly: true
+            - name: themes             ## you can remove this volume if you dont want to use custom themes......
+              mountPath: /opt/bitnami/keycloak/themes
+              readOnly: true
+
+          startupProbe:
+            httpGet: { path: /health/ready, port: 8095 }
+            failureThreshold: 60
+            periodSeconds: 2
+          readinessProbe:
+            httpGet: { path: /health/ready, port: 8095 }
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: { path: /health/live, port: 8095 }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+
+      resources:
+        requests:
+          cpu: "300m"
+          memory: "512Mi"
+        limits:
+          cpu: "700m"
+          memory: "1Gi"
+      
+      volumes:
+        - name: keycloak-conf
+          configMap:
+            name: keycloak-conf
+        - name: providers          ## you can remove this volume if you dont want to use custom providers/JArs......
+          persistentVolumeClaim:
+            claimName: keycloak-providers
+        - name: themes             ## you can remove this volume if you dont want to use custom themes......
+          persistentVolumeClaim:
+            claimName: keycloak-themes   

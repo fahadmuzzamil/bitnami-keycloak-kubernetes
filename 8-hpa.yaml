@@ -1,0 +1,35 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: keycloak
+  namespace: identity
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: keycloak
+  minReplicas: 2
+  maxReplicas: 8
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300   # Wait 5 minutes before scaling down
+      policies:
+        - type: Pods
+          value: 1                      # Remove only 1 pod at a time
+          periodSeconds: 300            # every 5 minutes
+      selectPolicy: Max
+  metrics:
+    # Target ~70% CPU utilization per pod
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    # Target ~75% memory utilization per pod
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 75
